@@ -5,10 +5,7 @@ import numpy as np
 import pickle
 from joblib import Parallel, delayed
 from math import log2, ceil
-from proglearn.progressive_learner import ProgressiveLearner
-from proglearn.deciders import SimpleArgmaxAverage
-from proglearn.transformers import TreeClassificationTransformer, NeuralClassificationTransformer
-from proglearn.voters import TreeClassificationVoter, KNNClassificationVoter
+from proglearn.forest import LifelongClassificationForest
 from proglearn.sims import generate_spirals
 
 #%%
@@ -58,32 +55,10 @@ def experiment(n_task1, n_task2, n_test=1000,
 
     errors = np.zeros(6,dtype=float)
 
-    default_transformer_class = TreeClassificationTransformer
-    default_transformer_kwargs = {"kwargs" : {"max_depth" : max_depth}}
 
-    default_voter_class = TreeClassificationVoter
-    default_voter_kwargs = {}
-
-    default_decider_class = SimpleArgmaxAverage
-    default_decider_kwargs = {"classes" : np.arange(2)}
-    progressive_learner = ProgressiveLearner(default_transformer_class = default_transformer_class,
-                                            default_transformer_kwargs = default_transformer_kwargs,
-                                            default_voter_class = default_voter_class,
-                                            default_voter_kwargs = default_voter_kwargs,
-                                            default_decider_class = default_decider_class,
-                                            default_decider_kwargs = default_decider_kwargs)
-    uf = ProgressiveLearner(default_transformer_class = default_transformer_class,
-                                            default_transformer_kwargs = default_transformer_kwargs,
-                                            default_voter_class = default_voter_class,
-                                            default_voter_kwargs = default_voter_kwargs,
-                                            default_decider_class = default_decider_class,
-                                            default_decider_kwargs = default_decider_kwargs)
-    naive_uf = ProgressiveLearner(default_transformer_class = default_transformer_class,
-                                            default_transformer_kwargs = default_transformer_kwargs,
-                                            default_voter_class = default_voter_class,
-                                            default_voter_kwargs = default_voter_kwargs,
-                                            default_decider_class = default_decider_class,
-                                            default_decider_kwargs = default_decider_kwargs)
+    progressive_learner = LifelongClassificationForest(n_estimators=n_trees)
+    uf = LifelongClassificationForest(n_estimators=n_trees)
+    naive_uf = LifelongClassificationForest(n_estimators=n_trees)
     
     #source data
     X_task1, y_task1 = generate_spirals(n_task1, 3, noise=0.8)
@@ -169,13 +144,14 @@ def experiment(n_task1, n_task2, n_test=1000,
 
     return errors
 
+#%%
 
 mc_rep = 1000
 n_test = 1000
 n_trees = 10
 n_spiral3 = (100*np.arange(0.5, 7.25, step=0.25)).astype(int)
 n_spiral5 = (100*np.arange(0.5, 7.50, step=0.25)).astype(int)
-
+#%%
 mean_error = np.zeros((6, len(n_spiral3)+len(n_spiral5)))
 std_error = np.zeros((6, len(n_spiral3)+len(n_spiral5)))
 
@@ -188,7 +164,7 @@ for i,n1 in enumerate(n_spiral3):
         Parallel(n_jobs=-1,verbose=1)(
         delayed(experiment)(
             n1,0,max_depth=ceil(log2(n1))
-        ) ange(mc_rep)
+        ) for _ in range(mc_rep)
       )
     )
     mean_error[:,i] = np.mean(error,axis=0)

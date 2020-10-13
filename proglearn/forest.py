@@ -15,8 +15,8 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
 
     Parameters:
     ---
-    n_estimators : int, default=100
-        The number of estimators used in the Lifelong Classification Forest
+    default_n_estimators : int, default=100
+        The default number of estimators used in the Lifelong Classification Forest.
     default_tree_construction_proportion : int, default=0.67
         The proportions of the input data set aside to train each decision
         tree. The remainder of the data is used to fill in voting posteriors.
@@ -49,12 +49,12 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
 
     def __init__(
         self,
-        n_estimators=100,
+        default_n_estimators=100,
         default_tree_construction_proportion=0.67,
         default_finite_sample_correction=False,
         default_max_depth=30,
     ):
-        self.n_estimators = n_estimators
+        self.default_n_estimators = default_n_estimators
         self.default_tree_construction_proportion = default_tree_construction_proportion
         self.default_finite_sample_correction = default_finite_sample_correction
         self.default_max_depth = default_max_depth
@@ -76,6 +76,7 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
         task_id=None,
         tree_construction_proportion=None,
         finite_sample_correction=None,
+        n_estimators=None,
         max_depth=None,
     ):
         """
@@ -100,6 +101,8 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
         finite_sample_correction : bool, default=False
             Boolean indicating whether this learner will have finite sample correction.
             The default is used if 'None' is provided.
+        n_estimators : int, default=None
+            The number of estimators used in the transformer for the current task.
         max_depth : int, default=30
             The maximum depth of a tree in the Lifelong Classification Forest.
             The default is used if 'None' is provided.
@@ -108,6 +111,9 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
             tree_construction_proportion = self.default_tree_construction_proportion
         if finite_sample_correction is None:
             finite_sample_correction = self.default_finite_sample_correction
+        if n_estimators is None:
+            n_estimators = self.default_n_estimators
+
         if max_depth is None:
             max_depth = self.default_max_depth
 
@@ -120,7 +126,7 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
                 1 - tree_construction_proportion,
                 0,
             ],
-            num_transformers=self.n_estimators,
+            num_transformers=n_estimators,
             transformer_kwargs={"kwargs": {"max_depth": max_depth}},
             voter_kwargs={
                 "classes": np.unique(y),
@@ -130,7 +136,7 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
         )
         return self
 
-    def add_transformer(self, X, y, transformer_id=None, max_depth=None):
+    def add_transformer(self, X, y, transformer_id=None, n_estimators=None, max_depth=None):
         """
         adds a transformer with id transformer_id and max tree depth max_depth, trained on
         given input data matrix, X, and output data matrix, y, to the Lifelong Classification Forest.
@@ -145,19 +151,24 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
             The output (response) data matrix.
         transformer_id : obj, default=None
             The id corresponding to the transformer being added.
+        n_estimators : int, default=None
+            The number of estimators used in the transformer.
         max_depth : int, default=30
             The maximum depth of a tree in the UncertaintyForest.
             The default is used if 'None' is provided.
         """
         if max_depth is None:
             max_depth = self.default_max_depth
+        
+        if n_estimators is None:
+            n_estimators = self.default_n_estimators
 
         self.pl.add_transformer(
             X,
             y,
             transformer_kwargs={"kwargs": {"max_depth": max_depth}},
             transformer_id=transformer_id,
-            num_transformers=self.n_estimators,
+            num_transformers=n_estimators,
         )
 
         return self
