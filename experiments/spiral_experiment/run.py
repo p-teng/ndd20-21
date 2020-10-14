@@ -56,9 +56,10 @@ def experiment(n_task1, n_task2, n_test=1000,
     errors = np.zeros(6,dtype=float)
 
 
-    progressive_learner = LifelongClassificationForest(n_estimators=n_trees)
-    uf = LifelongClassificationForest(n_estimators=n_trees)
-    naive_uf = LifelongClassificationForest(n_estimators=n_trees)
+    progressive_learner = LifelongClassificationForest(default_n_estimators=n_trees)
+    uf1 = LifelongClassificationForest(default_n_estimators=n_trees)
+    naive_uf = LifelongClassificationForest(default_n_estimators=n_trees)
+    uf2 = LifelongClassificationForest(default_n_estimators=n_trees)
     
     #source data
     X_task1, y_task1 = generate_spirals(n_task1, 3, noise=0.8)
@@ -69,13 +70,13 @@ def experiment(n_task1, n_task2, n_test=1000,
     test_task2, test_label_task2 = generate_spirals(n_test,  5, noise=0.4)
 
     if n_task1 == 0:
-        progressive_learner.add_task(X_task2, y_task2, num_transformers=n_trees)
+        progressive_learner.add_task(X_task2, y_task2, n_estimators=n_trees)
+        uf2.add_task(X_task2, y_task2, n_estimators=n_trees)
 
         errors[0] = 0.5
         errors[1] = 0.5
 
-        uf_task2=progressive_learner.predict(test_task2,
-                                             transformer_ids=[0], task_id=0)
+        uf_task2=uf2.predict(test_task2, task_id=0)
         l2f_task2=progressive_learner.predict(test_task2, task_id=0)
 
         errors[2] = 1 - np.mean(uf_task2 == test_label_task2)
@@ -85,10 +86,11 @@ def experiment(n_task1, n_task2, n_test=1000,
         errors[5] = 1 - np.mean(uf_task2 == test_label_task2)
     elif n_task2 == 0:
         progressive_learner.add_task(X_task1, y_task1,
-                                     num_transformers=n_trees)
+                                     n_estimators=n_trees)
+        uf1.add_task(X_task1, y_task1,
+                                     n_estimators=n_trees)
 
-        uf_task1=progressive_learner.predict(test_task1, 
-                                             transformer_ids=[0], task_id=0)
+        uf_task1=uf1.predict(test_task1, task_id=0)
         l2f_task1=progressive_learner.predict(test_task1, task_id=0)
 
         errors[0] = 1 - np.mean(uf_task1 == test_label_task1)
@@ -100,27 +102,27 @@ def experiment(n_task1, n_task2, n_test=1000,
         errors[4] = 1 - np.mean(uf_task1 == test_label_task1)
         errors[5] = 0.5
     else:
-        progressive_learner.add_task(X_task1, y_task1, num_transformers=n_trees)
-        progressive_learner.add_task(X_task2, y_task2, num_transformers=n_trees)
+        progressive_learner.add_task(X_task1, y_task1, n_estimators=n_trees)
+        progressive_learner.add_task(X_task2, y_task2, n_estimators=n_trees)
 
-        uf.add_task(X_task1, y_task1, num_transformers=2*n_trees)
-        uf.add_task(X_task2, y_task2, num_transformers=2*n_trees)
+        uf1.add_task(X_task1, y_task1, n_estimators=2*n_trees)
+        uf2.add_task(X_task2, y_task2, n_estimators=2*n_trees)
         
         naive_uf_train_x = np.concatenate((X_task1,X_task2),axis=0)
         naive_uf_train_y = np.concatenate((y_task1,y_task2),axis=0)
         naive_uf.add_task(
-                naive_uf_train_x, naive_uf_train_y, num_transformers=n_trees
+                naive_uf_train_x, naive_uf_train_y, n_estimators=n_trees
                 )
         
-        uf_task1=uf.predict(test_task1, transformer_ids=[0], task_id=0)
+        uf_task1=uf1.predict(test_task1, task_id=0)
         l2f_task1=progressive_learner.predict(test_task1, task_id=0)
-        uf_task2=uf.predict(test_task2, transformer_ids=[1], task_id=1)
+        uf_task2=uf2.predict(test_task2, task_id=1)
         l2f_task2=progressive_learner.predict(test_task2, task_id=1)
         naive_uf_task1 = naive_uf.predict(
-            test_task1, transformer_ids=[0], task_id=0
+            test_task1, task_id=0
         )
         naive_uf_task2 = naive_uf.predict(
-            test_task2, transformer_ids=[0], task_id=0
+            test_task2, task_id=0
         )
 
         errors[0] = 1 - np.mean(
