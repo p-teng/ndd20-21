@@ -13,7 +13,7 @@ from tqdm.notebook import tqdm
 from joblib import Parallel, delayed
 
 from proglearn.forest import UncertaintyForest
-from proglearn.sims import generate_gaussian_parity
+from proglearn.sims.gaussian_sim import generate_gaussian_parity
 
 def generate_data(n, mean, var):
     '''
