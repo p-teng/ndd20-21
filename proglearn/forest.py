@@ -12,7 +12,6 @@ import numpy as np
 class LifelongClassificationForest(ClassificationProgressiveLearner):
     """
     A class used to represent a lifelong classification forest.
-
     Parameters:
     ---
     n_estimators : int, default=100
@@ -27,7 +26,6 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
     default_max_depth : int, default=30
         The maximum depth of a tree in the Lifelong Classification Forest.
         This is used if 'max_depth' is not fed to add_task.
-
     Methods
     ---
     add_task(X, y, task_id, tree_construction_proportion, finite_sample_correction, max_depth)
@@ -84,7 +82,6 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
         data for training and voting based on tree_construction_proportion and uses the
         value of finite_sample_correction to determine whether the learner will have
         finite sample correction.
-
         Parameters
         ---
         X : ndarray
@@ -136,7 +133,6 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
         given input data matrix, X, and output data matrix, y, to the Lifelong Classification Forest.
         Also trains the voters and deciders from new transformer to previous tasks, and will
         train voters and deciders from this transformer to all new tasks.
-
         Parameters
         ---
         X : ndarray
@@ -165,7 +161,6 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
     def predict(self, X, task_id):
         """
         predicts class labels under task_id for each example in input data X.
-
         Parameters
         ---
         X : ndarray
@@ -178,7 +173,6 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
     def predict_proba(self, X, task_id):
         """
         estimates class posteriors under task_id for each example in input data X.
-
         Parameters
         ---
         X : ndarray
@@ -192,7 +186,6 @@ class LifelongClassificationForest(ClassificationProgressiveLearner):
 class UncertaintyForest:
     """
     A class used to represent an uncertainty forest.
-
     Attributes
     ---
     lf : LifelongClassificationForest
@@ -204,7 +197,6 @@ class UncertaintyForest:
         will use finite sample correction
     max_depth : int, default=30
         The maximum depth of a tree in the UncertaintyForest
-
     Methods
     ---
     fit(X, y)
@@ -223,7 +215,6 @@ class UncertaintyForest:
     def fit(self, X, y):
         """
         fits forest to data X with labels y
-
         Parameters
         ---
         X : array of shape [n_samples, n_features]
@@ -234,7 +225,7 @@ class UncertaintyForest:
         self.lf = LifelongClassificationForest(
             n_estimators=self.n_estimators,
             default_finite_sample_correction=self.finite_sample_correction,
-            default_max_depth=max_depth,
+            default_max_depth=self.max_depth,
         )
         self.lf.add_task(X, y, task_id=0)
         return self
@@ -242,7 +233,6 @@ class UncertaintyForest:
     def predict(self, X):
         """
         predicts class labels for each example in input data X.
-
         Parameters
         ---
         X : array of shape [n_samples, n_features]
@@ -253,7 +243,6 @@ class UncertaintyForest:
     def predict_proba(self, X):
         """
         estimates class posteriors for each example in input data X.
-
         Parameters
         ---
         X : array of shape [n_samples, n_features]
